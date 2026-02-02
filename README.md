@@ -4,7 +4,7 @@ A modular Java refactoring of [FastNoiseLite](https://github.com/Auburn/FastNois
 
 ## Background
 
-This library was developed for the **TRIPS (Terran Registry of Interstellar Positions and Stars)** application, a 3D interstellar visualization and exploration tool. The original FastNoiseLite provided an excellent foundation, but TRIPS required additional capabilities for:
+This library was developed for the **TRIPS (Terran Republic Interstellar Plotting System)** application, a 3D interstellar visualization and exploration tool. The original FastNoiseLite provided an excellent foundation, but TRIPS required additional capabilities for:
 
 - **Procedural planet generation** - Creating realistic terrain, atmospheres, and surface features for explorable worlds
 - **Interstellar-scale nebulae** - Rendering gas clouds spanning light-years with proper curl-based particle motion
