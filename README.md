@@ -1,6 +1,8 @@
 # FastNoiseLite Nouveau
 
 A modular Java refactoring of [FastNoiseLite](https://github.com/Auburn/FastNoiseLite) with significant extensions for procedural content generation at astronomical scales.
+The original was a 2600-line library with little in code documentation, and this refactoring aims to improve maintainability, performance, and usability. It also includes a comprehensive guide for using the library. I needed additional noise generators and algorithms for my own projects.
+I still have to push this to Maven Central, but you can use it directly from GitHub.
 
 ## Background
 
