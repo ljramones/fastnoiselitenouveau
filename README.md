@@ -17,35 +17,63 @@ These requirements led to the extensions documented below, which add 4D noise, s
 
 ## Preview Tool
 
-An interactive JavaFX preview tool is included for exploring and visualizing all noise types and features.
+An interactive JavaFX preview tool is included for exploring and visualizing all noise types and features in real-time.
+
+![Preview Tool Screenshot](docs/preview-tool.png)
 
 ### Running the Preview Tool
 
 ```bash
-# From the root directory
-mvn install -pl noisegen-lib
-mvn -pl preview-tool javafx:run
+# Using the run script (recommended)
+./run-preview.sh
 
-# Or from the preview-tool directory
-cd preview-tool
-mvn javafx:run
+# Or manually
+export JAVA_HOME=$(/usr/libexec/java_home -v 25)
+mvn -pl preview-tool javafx:run
 ```
 
 **Requirements:** JDK 25 with JavaFX 25 (preview tool only; library works with Java 17+)
 
-### Features
+### UI Overview
 
-- **All Noise Types** - OpenSimplex2, Perlin, Cellular, Value, etc.
-- **All Fractal Types** - FBm, Ridged, PingPong, Billow, HybridMulti
-- **Visualization Modes** - 2D, 3D slice navigation, 4D animation with play/pause
-- **Transform Pipeline** - Build and chain transforms (Ridge, Terrace, Power, etc.)
-- **Spatial Utilities** - Preview Chunked, Tiled, LOD modes
-- **Color Gradients** - Grayscale, Terrain, Heat, Ocean, Custom
-- **Pan/Zoom** - Drag to pan, scroll to zoom, double-click to reset
-- **Export** - Save PNG images, copy Java code snippets to clipboard
-- **Presets** - Quick access to common configurations (Terrain, Clouds, Marble, etc.)
+The preview tool has a dark-themed interface with:
 
-![Preview Tool Screenshot](docs/preview-tool.png)
+- **Left Sidebar** - Collapsible settings panels for all noise parameters
+- **Center Canvas** - Real-time noise preview (512x512 default, resizable)
+- **Mode Tabs** - Switch between 2D, 3D Slice, and 4D Animation views
+- **Stats Bar** - Render time, throughput, and min/max/avg noise values
+
+### Settings Panels
+
+| Panel | Description |
+|-------|-------------|
+| **General** | Noise type, seed, frequency |
+| **Fractal** | Fractal type, octaves, lacunarity, gain, weighted strength, ping-pong strength |
+| **Cellular** | Distance function, return type, jitter (only enabled for Cellular noise) |
+| **Domain Warp** | Enable/disable, warp type, amplitude |
+| **3D Rotation** | Rotation type for reducing directional artifacts |
+| **Transforms** | Build a pipeline of post-processing transforms (Ridge, Terrace, Power, Clamp, etc.) |
+| **Spatial Utilities** | Preview Chunked, Tiled, LOD, and other spatial modes |
+| **Visualization** | Color gradient selection (Grayscale, Terrain, Heat, Ocean, Custom) |
+
+### Visualization Modes
+
+- **2D** - Standard heightmap view
+- **3D Slice** - Navigate through a 3D noise volume using the Z slider
+- **4D Anim** - Animate through the W dimension with play/pause and speed controls
+
+### Interaction
+
+- **Pan** - Click and drag to move the view
+- **Zoom** - Scroll wheel to zoom in/out
+- **Reset** - Double-click to reset view to origin
+
+### Menu Options
+
+- **File → Export PNG** - Save the current noise image
+- **File → Copy Code Snippet** - Copy Java code to recreate the current configuration
+- **View → Canvas Size** - Change preview resolution (256, 512, 1024, or custom)
+- **Presets** - Quick configurations for Terrain, Clouds, Marble, Wood Grain, and Cells/Voronoi
 
 ## Roadmap
 
