@@ -20,7 +20,32 @@ These requirements led to the extensions documented below, which add 4D noise, s
 Planned features for future releases:
 
 - [ ] **Noise Preview Tool** - Interactive visualizer to explore noise generator combinations, tweak parameters in real-time, and see the resulting patterns (heightmaps, textures, 3D volumes)
-- [ ] **Performance Benchmarks** - Comprehensive benchmarking suite similar to the original FastNoiseLite, comparing noise types, fractal modes, and extension algorithms across different scenarios
+- [x] **Performance Benchmarks** - Comprehensive benchmarking suite similar to the original FastNoiseLite, comparing noise types, fractal modes, and extension algorithms across different scenarios
+
+## Benchmarks
+
+Run benchmarks with:
+```bash
+mvn compile test-compile exec:java
+```
+
+Example results (Apple M4 Max, 128GB unified memory, Java 17):
+
+| 2D Noise Type | M points/s | 3D Noise Type | M points/s |
+|---------------|------------|---------------|------------|
+| Value | 1112.88 | Value | 157.18 |
+| Perlin | 373.37 | Perlin | 86.42 |
+| OpenSimplex2 | 275.76 | OpenSimplex2 | 73.91 |
+| OpenSimplex2S | 210.47 | OpenSimplex2S | 64.06 |
+| Cellular | 116.75 | Cellular | 18.98 |
+
+| Fractal (3D, 4 oct) | M points/s | Spatial Utility | M points/s |
+|---------------------|------------|-----------------|------------|
+| FBm | 14.19 | ChunkedNoise | 199.17 |
+| Ridged | 13.74 | DoublePrecision | 239.57 |
+| HybridMulti [EXT] | 14.77 | TiledNoise | 68.59 |
+
+**4D Simplex [EXT]:** 62.64 M points/s
 
 ## Features
 

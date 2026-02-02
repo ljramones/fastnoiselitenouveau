@@ -122,6 +122,17 @@
                 </executions>
             </plugin>
 
+            <!-- Exec plugin for running benchmarks -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                    <mainClass>com.cognitivedynamics.noisegen.benchmark.NoiseBenchmark</mainClass>
+                    <classpathScope>test</classpathScope>
+                </configuration>
+            </plugin>
+
             <!-- Javadoc JAR (required for Maven Central) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
