@@ -31,21 +31,64 @@ mvn compile test-compile exec:java
 
 Example results (Apple M4 Max, 128GB unified memory, Java 17):
 
+### Core Noise Types
+
 | 2D Noise Type | M points/s | 3D Noise Type | M points/s |
 |---------------|------------|---------------|------------|
-| Value | 1112.88 | Value | 157.18 |
-| Perlin | 373.37 | Perlin | 86.42 |
-| OpenSimplex2 | 275.76 | OpenSimplex2 | 73.91 |
-| OpenSimplex2S | 210.47 | OpenSimplex2S | 64.06 |
-| Cellular | 116.75 | Cellular | 18.98 |
+| Value | 1110.56 | Value | 153.87 |
+| ValueCubic | 254.71 | ValueCubic | 15.28 |
+| Perlin | 369.91 | Perlin | 61.85 |
+| OpenSimplex2 | 285.83 | OpenSimplex2 | 74.41 |
+| OpenSimplex2S | 225.19 | OpenSimplex2S | 61.46 |
+| Cellular | 119.86 | Cellular | 17.89 |
 
-| Fractal (3D, 4 oct) | M points/s | Spatial Utility | M points/s |
-|---------------------|------------|-----------------|------------|
-| FBm | 14.19 | ChunkedNoise | 199.17 |
-| Ridged | 13.74 | DoublePrecision | 239.57 |
-| HybridMulti [EXT] | 14.77 | TiledNoise | 68.59 |
+**4D Simplex [EXT]:** 63.59 M points/s
 
-**4D Simplex [EXT]:** 62.64 M points/s
+### Fractal Noise (3D, 4 octaves)
+
+| Fractal Type | M points/s |
+|--------------|------------|
+| FBm | 14.40 |
+| Ridged | 13.82 |
+| PingPong | 13.61 |
+| Billow [EXT] | 13.50 |
+| HybridMulti [EXT] | 14.48 |
+
+### Spatial Utilities [EXT]
+
+| Utility | M points/s |
+|---------|------------|
+| ChunkedNoise | 195.82 |
+| DoublePrecision | 230.93 |
+| TiledNoise | 67.75 |
+| LODNoise | 101.64 |
+
+### Advanced Algorithms [EXT]
+
+| Algorithm | M points/s |
+|-----------|------------|
+| WaveletNoise 2D | 135.65 |
+| SparseConvolution | 7.54 |
+| HierarchicalNoise | 48.73 |
+| Curl3D | 6.41 |
+| CurlFBm3D (4 oct) | 1.99 |
+
+### Noise Derivatives [EXT]
+
+| Derivative Type | M points/s |
+|-----------------|------------|
+| Analytical 2D | 225.01 |
+| Numerical 2D | 57.92 |
+| Analytical 3D | 61.77 |
+| Numerical 3D | 11.50 |
+
+### Domain Warp
+
+| Warp Type | M points/s |
+|-----------|------------|
+| OpenSimplex2 2D | 263.44 |
+| OpenSimplex2 3D | 53.72 |
+| Progressive 2D (4 oct) | 31.91 |
 
 ## Features
 
