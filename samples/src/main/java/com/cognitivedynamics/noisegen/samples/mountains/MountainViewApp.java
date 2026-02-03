@@ -2,7 +2,6 @@ package com.cognitivedynamics.noisegen.samples.mountains;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
-import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
 import javafx.scene.*;
 import javafx.scene.control.*;
@@ -37,13 +36,19 @@ public class MountainViewApp extends Application {
     // 3D scene components
     private SubScene subScene;
     private Group terrainGroup;
+    private Group cameraGroup;  // Pivot for camera rotation
     private PerspectiveCamera camera;
     private MeshView currentMesh;
 
+    // Camera rotation transforms
+    private Rotate rotateX;  // Pitch
+    private Rotate rotateY;  // Yaw
+    private Translate cameraTranslate;
+
     // Camera state
-    private double cameraDistance = 500;
-    private double cameraAngleX = -25;  // Pitch (look down slightly)
-    private double cameraAngleY = 30;   // Yaw (rotation around terrain)
+    private double cameraDistance = 600;
+    private double cameraAngleX = 30;   // Pitch (look down) - positive = look down
+    private double cameraAngleY = -30;  // Yaw (rotation around terrain)
 
     // Mouse drag tracking
     private double mouseOldX, mouseOldY;
@@ -88,30 +93,38 @@ public class MountainViewApp extends Application {
         // Create 3D scene root
         terrainGroup = new Group();
 
-        // Create camera
+        // Create camera with pivot-based rotation
         camera = new PerspectiveCamera(true);
-        camera.setNearClip(0.1);   // Very small to avoid clipping when zoomed in
+        camera.setNearClip(0.1);
         camera.setFarClip(10000);
         camera.setFieldOfView(45);
-        updateCameraPosition();
+
+        // Camera is positioned along -Z axis from pivot, then pivot is rotated
+        cameraTranslate = new Translate(0, 0, -cameraDistance);
+        rotateX = new Rotate(cameraAngleX, Rotate.X_AXIS);
+        rotateY = new Rotate(cameraAngleY, Rotate.Y_AXIS);
+
+        // Camera group acts as pivot at origin - rotate it to orbit around terrain
+        cameraGroup = new Group(camera);
+        cameraGroup.getTransforms().addAll(rotateY, rotateX, cameraTranslate);
 
         // Add lighting
-        AmbientLight ambient = new AmbientLight(Color.rgb(60, 60, 70));
+        AmbientLight ambient = new AmbientLight(Color.rgb(80, 80, 90));
 
-        // Main directional light (sun)
+        // Main directional light (sun) - above and to the side
         PointLight sunLight = new PointLight(Color.rgb(255, 250, 240));
-        sunLight.setTranslateX(300);
-        sunLight.setTranslateY(500);
-        sunLight.setTranslateZ(-200);
+        sunLight.setTranslateX(500);
+        sunLight.setTranslateY(-400);  // Above (Y is up in our world)
+        sunLight.setTranslateZ(-300);
 
         // Fill light from opposite side
-        PointLight fillLight = new PointLight(Color.rgb(100, 110, 130));
-        fillLight.setTranslateX(-200);
-        fillLight.setTranslateY(200);
-        fillLight.setTranslateZ(300);
+        PointLight fillLight = new PointLight(Color.rgb(80, 90, 110));
+        fillLight.setTranslateX(-300);
+        fillLight.setTranslateY(-200);
+        fillLight.setTranslateZ(400);
 
         // Scene root
-        Group root3D = new Group(terrainGroup, ambient, sunLight, fillLight);
+        Group root3D = new Group(terrainGroup, cameraGroup, ambient, sunLight, fillLight);
 
         // Create SubScene for 3D content
         subScene = new SubScene(root3D, SCENE_WIDTH, SCENE_HEIGHT, true, SceneAntialiasing.BALANCED);
@@ -141,67 +154,27 @@ public class MountainViewApp extends Application {
         mouseOldY = event.getSceneY();
 
         // Rotate camera around terrain
-        cameraAngleY += deltaX * 0.5;
-        cameraAngleX -= deltaY * 0.3;
+        cameraAngleY += deltaX * 0.3;
+        cameraAngleX += deltaY * 0.3;
 
-        // Clamp pitch
-        cameraAngleX = Math.max(-89, Math.min(-5, cameraAngleX));
+        // Clamp pitch (5 to 89 degrees looking down)
+        cameraAngleX = Math.max(5, Math.min(89, cameraAngleX));
 
         updateCameraPosition();
     }
 
     private void handleScroll(ScrollEvent event) {
         double delta = event.getDeltaY();
-        cameraDistance -= delta * 0.5;
-        cameraDistance = Math.max(50, Math.min(1500, cameraDistance));
+        cameraDistance -= delta * 0.8;
+        cameraDistance = Math.max(100, Math.min(1500, cameraDistance));
         updateCameraPosition();
     }
 
     private void updateCameraPosition() {
-        // Convert spherical coordinates to Cartesian
-        double angleXRad = Math.toRadians(cameraAngleX);
-        double angleYRad = Math.toRadians(cameraAngleY);
-
-        double cosX = Math.cos(angleXRad);
-        double sinX = Math.sin(angleXRad);
-        double cosY = Math.cos(angleYRad);
-        double sinY = Math.sin(angleYRad);
-
-        double x = cameraDistance * cosX * sinY;
-        double y = -cameraDistance * sinX;
-        double z = cameraDistance * cosX * cosY;
-
-        camera.getTransforms().clear();
-        camera.getTransforms().addAll(
-            new Translate(x, y, z),
-            new Rotate(cameraAngleY, new Point3D(0, 1, 0)),
-            new Rotate(-cameraAngleX, new Point3D(1, 0, 0))
-        );
-
-        // Look at origin
-        camera.setTranslateX(x);
-        camera.setTranslateY(y);
-        camera.setTranslateZ(z);
-
-        // Calculate look-at rotation
-        double lookAtX = -x;
-        double lookAtY = -y;
-        double lookAtZ = -z;
-
-        double length = Math.sqrt(lookAtX * lookAtX + lookAtY * lookAtY + lookAtZ * lookAtZ);
-        lookAtX /= length;
-        lookAtY /= length;
-        lookAtZ /= length;
-
-        double pitch = Math.toDegrees(Math.asin(lookAtY));
-        double yaw = Math.toDegrees(Math.atan2(lookAtX, lookAtZ));
-
-        camera.getTransforms().clear();
-        camera.getTransforms().addAll(
-            new Translate(x, y, z),
-            new Rotate(-yaw, Rotate.Y_AXIS),
-            new Rotate(pitch, Rotate.X_AXIS)
-        );
+        // Update the transforms - camera orbits around origin looking at terrain
+        rotateX.setAngle(cameraAngleX);
+        rotateY.setAngle(cameraAngleY);
+        cameraTranslate.setZ(-cameraDistance);
     }
 
     private VBox createControlPanel() {
@@ -251,9 +224,9 @@ public class MountainViewApp extends Application {
         Button resetCameraBtn = new Button("Reset Camera");
         resetCameraBtn.setMaxWidth(Double.MAX_VALUE);
         resetCameraBtn.setOnAction(e -> {
-            cameraDistance = 500;
-            cameraAngleX = -25;
-            cameraAngleY = 30;
+            cameraDistance = 600;
+            cameraAngleX = 30;
+            cameraAngleY = -30;
             updateCameraPosition();
         });
 
