@@ -166,23 +166,24 @@ public class NebulaGenerator {
      * @return NebulaData containing density and color channel values
      */
     public NebulaData sample(double x, double y, double time) {
-        // Apply curl noise displacement for fluid-like motion
-        float[] curl = turbulence.curl2D((float) x, (float) y);
+        // Apply time-varying curl noise displacement for fluid-like motion
+        // The curl field itself evolves with time
+        float[] curl = turbulence.curl3D((float) x, (float) y, (float) (time * 0.3));
         double displacedX = x + curl[0] * turbulenceStrength * 0.5;
         double displacedY = y + curl[1] * turbulenceStrength * 0.5;
 
         // Sample density using displaced coordinates
-        // Use time as Z coordinate for animation
-        double density = densityNode.evaluate3D(seed, displacedX, displacedY, time * 0.1);
+        // Use time as Z coordinate for animation - faster multiplier for visible motion
+        double density = densityNode.evaluate3D(seed, displacedX, displacedY, time * 0.5);
 
-        // Sample filaments with slight time offset for independent motion
-        double filaments = filamentNode.evaluate3D(seed + 1000, displacedX, displacedY, time * 0.15);
+        // Sample filaments with different time rate for layered motion
+        double filaments = filamentNode.evaluate3D(seed + 1000, displacedX, displacedY, time * 0.7);
 
-        // Sample emission regions
-        double emission = emissionNode.evaluate3D(seed + 2000, x, y, time * 0.05);
+        // Sample emission regions - slower, more stable
+        double emission = emissionNode.evaluate3D(seed + 2000, x, y, time * 0.3);
 
-        // Sample dust
-        double dust = dustNode.evaluate3D(seed + 3000, x, y, time * 0.08);
+        // Sample dust - medium speed
+        double dust = dustNode.evaluate3D(seed + 3000, x, y, time * 0.4);
 
         return new NebulaData(density, filaments, emission, dust);
     }
