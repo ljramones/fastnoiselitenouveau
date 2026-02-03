@@ -75,12 +75,63 @@ The preview tool has a dark-themed interface with:
 - **View → Canvas Size** - Change preview resolution (256, 512, 1024, or custom)
 - **Presets** - Quick configurations for Terrain, Clouds, Marble, Wood Grain, and Cells/Voronoi
 
+## Samples
+
+Interactive JavaFX sample applications demonstrating real-world usage of the noise library.
+
+### Running the Samples
+
+```bash
+# Using the run script (recommended)
+./run-samples.sh
+
+# Or manually
+export JAVA_HOME=$(/usr/libexec/java_home -v 25)
+mvn -pl samples javafx:run
+```
+
+### Available Samples
+
+#### Multi-Biome Terrain Generator
+
+Demonstrates layered terrain composition using the Node Graph System:
+
+- **Continental Layer** - Low frequency FBm with domain warping for organic coastlines
+- **Mountain Layer** - Ridged noise masked to appear only on highlands
+- **Hills Layer** - Medium frequency FBm for rolling terrain variation
+- **Detail Layer** - High frequency noise for fine surface features
+
+**Features:**
+- Real-time terrain visualization with 8 distinct biomes
+- Adjustable parameters (seed, scales, warp amplitude)
+- Layer visualization modes to understand composition
+- Pan and zoom navigation
+
+**Biomes:** Deep Ocean, Shallow Ocean, Beach, Plains, Forest, Hills, Mountains, Snow Peaks
+
+#### 3D Mountain Terrain
+
+Realistic 3D mountain visualization inspired by FastNoise2's NoiseTool:
+
+- **Ridged Multifractal** - Sharp alpine peaks and ridges
+- **Hybrid Multifractal** - Erosion-like detail distribution
+- **Domain Warping** - Organic, non-uniform mountain ranges
+- **Multi-octave Detail** - Features at all scales from peaks to pebbles
+
+**Features:**
+- Real-time 3D mesh rendering with lighting
+- Orbital camera (drag to rotate, scroll to zoom)
+- 256×256 triangle mesh (130,050 triangles)
+- Adjustable terrain parameters
+- Wireframe mode for mesh visualization
+
 ## Roadmap
 
 Planned features for future releases:
 
 - [x] **Noise Preview Tool** - Interactive visualizer to explore noise generator combinations, tweak parameters in real-time, and see the resulting patterns (heightmaps, textures, 3D volumes)
 - [x] **Performance Benchmarks** - Comprehensive benchmarking suite similar to the original FastNoiseLite, comparing noise types, fractal modes, and extension algorithms across different scenarios
+- [x] **Node Graph System** - FastNoise2-inspired composable noise generation with fluent API, immutable nodes, and bulk evaluation support
 
 ## Benchmarks
 
@@ -173,6 +224,7 @@ Example results (Apple M4 Max, 128GB unified memory, Java 17):
 | **Billow/HybridMulti** | Additional fractal types | Clouds, eroded terrain |
 | **Noise Transforms** | Post-processing pipeline | Ridge enhancement, terracing, quantization |
 | **Wavelet Noise** | Band-limited, mipmap-safe noise | Texture synthesis without aliasing |
+| **Node Graph System** | Composable DAG-based noise generation | Complex multi-layer terrain, procedural textures |
 
 ## Quick Start
 
@@ -238,7 +290,7 @@ float[] velocity = turbulence.curl3D(x, y, z);
 
 ```bash
 mvn clean compile    # Compile
-mvn test             # Run all tests (499 tests)
+mvn test             # Run all tests (697 tests)
 mvn package          # Build JAR
 mvn install          # Install to local repo (needed for preview-tool)
 ```
@@ -246,13 +298,14 @@ mvn install          # Install to local repo (needed for preview-tool)
 **Note:** This is a multi-module Maven project:
 - `noisegen-lib` - The core noise library (Java 17+)
 - `preview-tool` - The JavaFX preview application (Java 25+)
+- `samples` - Sample applications demonstrating real-world usage (Java 25+)
 
 To build only the library:
 ```bash
 mvn -pl noisegen-lib package
 ```
 
-Library requires Java 17+. Preview tool requires JDK 25 with JavaFX 25.
+Library requires Java 17+. Preview tool and samples require JDK 25 with JavaFX 25.
 
 ---
 
@@ -268,8 +321,9 @@ Library requires Java 17+. Preview tool requires JDK 25 with JavaFX 25.
 6. [Spatial Utilities](#spatial-utilities)
 7. [Advanced Algorithms](#advanced-algorithms)
 8. [Noise Derivatives](#noise-derivatives)
-9. [Configuration Reference](#configuration-reference)
-10. [Package Structure](#package-structure)
+9. [Node Graph System](#node-graph-system)
+10. [Configuration Reference](#configuration-reference)
+11. [Package Structure](#package-structure)
 
 ---
 
@@ -294,6 +348,9 @@ Library requires Java 17+. Preview tool requires JDK 25 with JavaFX 25.
 | **Fluid / smoke motion** | TurbulenceNoise | `turbulence.curlFBm3D(...)` |
 | **Voronoi cells / cracks** | Cellular noise | `SetNoiseType(Cellular)` |
 | **Organic biome boundaries** | Cellular + Domain Warp | `DomainWarp()` → `Cellular` |
+| **Complex layered terrain** | Node Graph System | `graph.fbm().add(graph.ridged())` |
+| **Composable noise pipelines** | NoiseGraph + fluent API | `node.scale().clamp().warp()` |
+| **Bulk heightmap generation** | BulkEvaluator | `bulk.fill2D(node, 512, 512, ...)` |
 
 ---
 
@@ -585,6 +642,215 @@ byte[] normalMap = deriv.generateNormalMapRGB(width, height, worldSize, heightSc
 
 ---
 
+## Node Graph System
+
+*(Extension)* - A FastNoise2-inspired composable noise generation system using a directed acyclic graph (DAG) of nodes.
+
+### Overview
+
+The node graph system provides a fluent API for building complex noise configurations by chaining nodes together. All nodes are immutable and thread-safe, using double-precision coordinates for astronomical scales.
+
+### Quick Start
+
+```java
+import com.cognitivedynamics.noisegen.graph.NoiseGraph;
+import com.cognitivedynamics.noisegen.graph.NoiseNode;
+import com.cognitivedynamics.noisegen.graph.util.BulkEvaluator;
+
+// Create a graph factory
+NoiseGraph graph = NoiseGraph.create(1337);
+
+// Build complex terrain with fluent API
+NoiseNode terrain = graph.fbm(graph.simplex().frequency(0.01), 5)
+    .add(graph.ridged(graph.simplex().frequency(0.02), 4).multiply(0.3))
+    .clamp(-1.0, 1.0);
+
+// Single point evaluation
+double height = terrain.evaluate2D(1337, 100.0, 200.0);
+
+// Bulk evaluation for heightmaps
+BulkEvaluator bulk = new BulkEvaluator(1337);
+double[][] heightmap = bulk.fill2D(terrain, 512, 512, 0, 0, 1.0);
+```
+
+### Node Types
+
+#### Source Nodes
+Generate base noise values:
+
+```java
+graph.simplex()           // OpenSimplex2 noise
+graph.simplexSmooth()     // OpenSimplex2S (smoother variant)
+graph.perlin()            // Classic Perlin noise
+graph.value()             // Value noise
+graph.valueCubic()        // Value noise with cubic interpolation
+graph.cellular()          // Cellular/Voronoi noise
+graph.simplex4D()         // 4D Simplex (supports W dimension)
+graph.constant(0.5)       // Constant value
+```
+
+All source nodes support `.frequency(double)` for scaling:
+```java
+graph.simplex().frequency(0.01)  // Low frequency = large features
+```
+
+#### Fractal Nodes
+Combine multiple octaves:
+
+```java
+graph.fbm(source, octaves)              // Fractional Brownian motion
+graph.ridged(source, octaves)           // Ridged multifractal (mountains)
+graph.billow(source, octaves)           // Billow (soft clouds)
+graph.hybridMulti(source, octaves)      // Hybrid (erosion-like detail)
+
+// With custom lacunarity and gain
+graph.fbm(source, 5, 2.0, 0.5)
+```
+
+#### Combiner Nodes
+Combine two noise sources:
+
+```java
+node.add(other)           // Sum: a + b
+node.subtract(other)      // Difference: a - b
+node.multiply(other)      // Product: a * b
+node.multiply(0.5)        // Scale by constant
+node.min(other)           // Minimum: min(a, b)
+node.max(other)           // Maximum: max(a, b)
+
+// Blend between two sources using control signal
+graph.blend(nodeA, nodeB, controlNode)  // lerp(a, b, control)
+```
+
+#### Modifier Nodes
+Transform coordinates or values:
+
+```java
+node.scale(2.0)                    // Scale coordinates (higher frequency)
+node.offset(10, 20, 0)             // Offset coordinates
+node.clamp(-0.5, 0.5)              // Clamp output range
+node.abs()                         // Absolute value
+node.invert()                      // Negate: -value
+node.transform(noiseTransform)     // Apply any NoiseTransform
+```
+
+#### Domain Warp
+Distort coordinates using noise:
+
+```java
+NoiseNode warped = terrain.warp(graph.simplex().frequency(0.005), 50.0);
+// warpSource provides distortion, amplitude controls strength
+```
+
+### Complex Examples
+
+#### Layered Terrain with Biomes
+
+```java
+NoiseGraph g = NoiseGraph.create(1337);
+
+// Plains biome - smooth rolling hills
+NoiseNode plains = g.fbm(g.simplex().frequency(0.01), 3)
+    .multiply(0.3);
+
+// Mountain biome - dramatic ridges
+NoiseNode mountains = g.ridged(g.simplex().frequency(0.02), 5)
+    .multiply(1.5);
+
+// Biome selector (0 = plains, 1 = mountains)
+NoiseNode biomeControl = g.simplex().frequency(0.001)
+    .clamp(-1, 1)
+    .multiply(0.5)
+    .add(g.constant(0.5));  // Map to [0, 1]
+
+// Blend based on biome
+NoiseNode terrain = g.blend(plains, mountains, biomeControl);
+```
+
+#### Animated Clouds (4D)
+
+```java
+NoiseNode clouds = graph.fbm(graph.simplex4D().frequency(0.05), 4);
+
+// Animate by varying W coordinate
+for (double time = 0; time < 10; time += 0.1) {
+    double density = clouds.evaluate4D(seed, x, y, z, time);
+}
+```
+
+#### Domain-Warped Terrain
+
+```java
+NoiseNode warpSource = graph.simplex().frequency(0.005);
+NoiseNode terrain = graph.fbm(graph.simplex().frequency(0.01), 4)
+    .warp(warpSource, 50.0)  // Organic distortion
+    .clamp(-1, 1);
+```
+
+### BulkEvaluator
+
+Efficiently fill arrays with noise values:
+
+```java
+BulkEvaluator bulk = new BulkEvaluator(seed);
+
+// 2D heightmap
+double[][] map2D = bulk.fill2D(node, width, height, startX, startY, step);
+
+// 2D with explicit range
+double[][] rangeMap = bulk.fill2DRange(node, width, height, minX, minY, maxX, maxY);
+
+// 3D volume
+double[][][] volume = bulk.fill3D(node, width, height, depth, startX, startY, startZ, step);
+
+// Flat arrays for performance
+double[] flat2D = bulk.fill2DFlat(node, width, height, startX, startY, step);
+double[] flat3D = bulk.fill3DFlat(node, width, height, depth, startX, startY, startZ, step);
+
+// Float arrays for graphics APIs
+float[][] floatMap = bulk.fill2DFloat(node, width, height, startX, startY, step);
+```
+
+### Thread Safety
+
+All nodes are immutable and thread-safe:
+- Fluent methods return new node instances
+- Same node can be evaluated from multiple threads
+- BulkEvaluator instances are thread-safe
+
+```java
+NoiseNode terrain = graph.fbm(graph.simplex(), 4);
+
+// Safe to use from multiple threads
+ExecutorService executor = Executors.newFixedThreadPool(8);
+for (int i = 0; i < 8; i++) {
+    executor.submit(() -> terrain.evaluate2D(seed, x, y));
+}
+```
+
+### Integration with Existing Code
+
+The node graph system integrates with existing FastNoiseLite features:
+
+```java
+// Use existing transforms
+import com.cognitivedynamics.noisegen.transforms.RangeTransform;
+
+NoiseNode normalized = graph.simplex()
+    .transform(new RangeTransform(-1, 1, 0, 255));
+
+// Use existing cellular settings
+import com.cognitivedynamics.noisegen.NoiseTypes.*;
+
+NoiseNode cells = graph.cellular(
+    CellularDistanceFunction.Euclidean,
+    CellularReturnType.Distance2Sub,
+    1.0
+);
+```
+
+---
+
 ## Configuration Reference
 
 ### Frequency Guidelines
@@ -632,20 +898,44 @@ fastnoiselitenouveau/
 │       │   ├── HierarchicalNoise.java, TurbulenceNoise.java
 │       ├── derivatives/                  # [EXT]
 │       │   ├── NoiseDerivatives.java, SimplexDerivatives.java
+│       ├── graph/                         # [EXT] Node Graph System
+│       │   ├── NoiseNode.java            # Core interface
+│       │   ├── NoiseGraph.java           # Factory/builder
+│       │   ├── nodes/
+│       │   │   ├── source/               # SimplexSourceNode, PerlinSourceNode, etc.
+│       │   │   ├── combiner/             # AddNode, MultiplyNode, BlendNode, etc.
+│       │   │   ├── modifier/             # ClampNode, DomainScaleNode, TransformNode, etc.
+│       │   │   ├── fractal/              # FBmNode, RidgedNode, BillowNode, etc.
+│       │   │   └── warp/                 # DomainWarpNode
+│       │   └── util/
+│       │       └── BulkEvaluator.java    # Bulk array filling
 │       └── warp/
 │           └── DomainWarpProcessor.java
-└── preview-tool/                # JavaFX preview application
+├── preview-tool/                # JavaFX preview application
+│   ├── pom.xml
+│   └── src/main/java/com/cognitivedynamics/noisegen/preview/
+│       ├── NoisePreviewApp.java     # Main JavaFX application
+│       ├── MainController.java      # UI controller
+│       ├── model/
+│       │   └── NoisePreviewModel.java   # Observable settings model
+│       ├── view/
+│       │   ├── NoiseCanvas.java     # Noise rendering canvas
+│       │   └── ControlPanel.java    # Settings sidebar
+│       └── util/
+│           └── NoiseRenderer.java   # Background rendering
+└── samples/                     # Sample applications
     ├── pom.xml
-    └── src/main/java/com/cognitivedynamics/noisegen/preview/
-        ├── NoisePreviewApp.java     # Main JavaFX application
-        ├── MainController.java      # UI controller
-        ├── model/
-        │   └── NoisePreviewModel.java   # Observable settings model
-        ├── view/
-        │   ├── NoiseCanvas.java     # Noise rendering canvas
-        │   └── ControlPanel.java    # Settings sidebar
-        └── util/
-            └── NoiseRenderer.java   # Background rendering
+    └── src/main/java/com/cognitivedynamics/noisegen/samples/
+        ├── SamplesLauncher.java     # Main launcher for all samples
+        ├── multibiome/
+        │   ├── MultiBiomeApp.java       # JavaFX terrain visualizer
+        │   ├── MultiBiomeTerrain.java   # Layered terrain using node graph
+        │   ├── BiomeType.java           # Biome definitions and colors
+        │   └── TerrainRenderer.java     # Canvas rendering utilities
+        └── mountains/
+            ├── MountainViewApp.java     # 3D mountain viewer
+            ├── MountainTerrain.java     # Alpine terrain generation
+            └── TerrainMeshBuilder.java  # Heightmap to 3D mesh conversion
 ```
 
 ---

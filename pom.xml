@@ -16,6 +16,7 @@
     <modules>
         <module>noisegen-lib</module>
         <module>preview-tool</module>
+        <module>samples</module>
     </modules>
 
     <licenses>
