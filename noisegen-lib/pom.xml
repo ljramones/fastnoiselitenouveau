@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.cognitivedynamics</groupId>
         <artifactId>fastnoiselitenouveau-parent</artifactId>
-        <version>1.1.1</version>
+        <version>1.2.0</version>
     </parent>
 
     <artifactId>fastnoiselitenouveau</artifactId>
@@ -17,8 +17,8 @@
     <description>A modular Java refactoring of FastNoiseLite with extensions for procedural content generation</description>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
     </properties>
 
     <dependencies>
