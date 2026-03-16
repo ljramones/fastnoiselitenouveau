@@ -38,10 +38,6 @@
     </dependencies>
 
     <build>
-        <!-- Non-standard source directories to match existing structure -->
-        <sourceDirectory>src/main/Java</sourceDirectory>
-        <testSourceDirectory>src/test/Java</testSourceDirectory>
-
         <plugins>
             <!-- Compiler plugin -->
             <plugin>
